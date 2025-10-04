@@ -2,18 +2,15 @@ import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 
 export default function WelcomeScreen({ onFinish }) {
-  const TOTAL_TIME = 5; // in seconds
+  const TOTAL_TIME = 5; 
   const [remainingTime, setRemainingTime] = useState(TOTAL_TIME);
 
-  // ✅ Trigger exit exactly after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       onFinish?.();
     }, TOTAL_TIME * 1000);
     return () => clearTimeout(timer);
   }, [onFinish]);
-
-  // ✅ Countdown updates every second
   useEffect(() => {
     const interval = setInterval(() => {
       setRemainingTime((prev) => (prev > 0 ? prev - 1 : 0));
@@ -21,7 +18,6 @@ export default function WelcomeScreen({ onFinish }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Generate fixed positions for stars and lines on mount to prevent repositioning on re-renders
   const stars = useMemo(() => {
     return [...Array(50)].map((_, i) => ({
       id: i,
@@ -60,7 +56,7 @@ export default function WelcomeScreen({ onFinish }) {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center text-white relative overflow-hidden bg-slate-950">
-      {/* 🌌 Enhanced Cinematic Background: Multi-Layer Gradient for Depth */}
+      
       <div
         className="absolute inset-0"
         style={{
@@ -80,7 +76,6 @@ export default function WelcomeScreen({ onFinish }) {
         }}
       />
 
-      {/* ⚡ Subtle Pulsating Thunder Glow Layers - Low opacity to avoid overwhelming content */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-emerald-500/15 rounded-full blur-3xl"
         style={{ zIndex: 1 }}
@@ -116,7 +111,6 @@ export default function WelcomeScreen({ onFinish }) {
         }}
       />
 
-      {/* 🌠 Twinkling Stars Effect - Fixed positions, smooth twinkling (opacity + subtle scale) */}
       <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
         {stars.map((star) => (
           <motion.div
@@ -140,7 +134,6 @@ export default function WelcomeScreen({ onFinish }) {
         ))}
       </div>
 
-      {/* ☄️ Enhanced Moving Light Rays - Fixed initial positions, smooth horizontal movement */}
       <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 3 }}>
         {lightRays.map((ray) => (
           <motion.div
@@ -168,7 +161,6 @@ export default function WelcomeScreen({ onFinish }) {
         ))}
       </div>
 
-      {/* ✨ Loading Dots - Adjusted position and size for better spacing */}
       <div className="absolute bottom-12 md:bottom-16 left-1/2 transform -translate-x-1/2 flex gap-4 z-30">
         {[0, 0.3, 0.6].map((delay, idx) => (
           <motion.div
@@ -180,15 +172,13 @@ export default function WelcomeScreen({ onFinish }) {
         ))}
       </div>
 
-      {/* ⚡ Main Content - Improved spacing with responsive adjustments */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="flex flex-col items-center justify-center z-40 text-center px-4 md:px-8 max-w-4xl w-full py-12 md:py-16"
-        style={{ minHeight: "80vh" }} // Ensures vertical breathing room
+        style={{ minHeight: "80vh" }} 
       >
-        {/* 🚀 Title Section - Enhanced spacing and responsive sizing */}
         <motion.div variants={titleVariants} className="mb-12 md:mb-16 lg:mb-20">
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.02em] bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-200 drop-shadow-2xl flex items-center justify-center gap-2 md:gap-4 leading-none">
             POWER HOUSE
@@ -200,15 +190,12 @@ export default function WelcomeScreen({ onFinish }) {
           </p>
         </motion.div>
 
-        {/* 🪄 Tagline - Adjusted margins for balanced spacing */}
         <motion.p
           variants={itemVariants}
           className="text-lg sm:text-xl md:text-2xl text-slate-200 mb-12 md:mb-16 lg:mb-20 max-w-2xl lg:max-w-3xl mx-auto italic font-light leading-7 md:leading-8 lg:leading-9 tracking-wide"
         >
           “Empowering the future with seamless <span className="text-indigo-300 not-italic font-semibold">wireless solar energy</span>.”
         </motion.p>
-
-        {/* 📊 Progress Bar - Centered with improved spacing */}
         <div className="w-full max-w-xl md:max-w-2xl mx-auto">
           <div className="flex justify-between items-center mb-4 md:mb-6">
             <span className="text-sm sm:text-base md:text-lg font-semibold text-slate-300 tracking-wide">Initializing Dashboard...</span>
@@ -233,7 +220,6 @@ export default function WelcomeScreen({ onFinish }) {
         </div>
       </motion.div>
 
-      {/* 📌 Footer - Adjusted positioning for better bottom spacing */}
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 0.8, y: 0 }}

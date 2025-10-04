@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  // 🔋 Voltage/current limits
+  
   const TX_VOLTAGE_MIN = 12.4;
   const TX_VOLTAGE_MAX = 12.8;
   const TX_CURRENT_MIN = 1.7;
@@ -14,7 +14,6 @@ export default function Dashboard() {
   const RX_CURRENT_START = 1.2;
   const RX_CURRENT_MAX = 1.31;
 
-  // 📊 States
   const [transmitterVoltage, setTransmitterVoltage] = useState(12.6);
   const [transmitterCurrent, setTransmitterCurrent] = useState(1.8);
   const [receiverVoltage, setReceiverVoltage] = useState(RX_VOLTAGE_START);
@@ -24,41 +23,51 @@ export default function Dashboard() {
 
   const intervalRef = useRef(null);
 
-  // 📈 Simulation
+  
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      // 📶 Receiver: random increase until max
-      let newRxVoltage = parseFloat(receiverVoltage) + (Math.random() * 0.08);
-      if (newRxVoltage >= RX_VOLTAGE_MAX) newRxVoltage = RX_VOLTAGE_MAX;
-      setReceiverVoltage(newRxVoltage.toFixed(2));
+      setReceiverVoltage((prev) => {
+        let newRxVoltage = parseFloat(prev) + (Math.random() * 0.08);
+        if (newRxVoltage >= RX_VOLTAGE_MAX) newRxVoltage = RX_VOLTAGE_MAX;
+        return newRxVoltage.toFixed(2);
+      });
 
-      let newRxCurrent = parseFloat(receiverCurrent) + (Math.random() * 0.04);
-      if (newRxCurrent >= RX_CURRENT_MAX) newRxCurrent = RX_CURRENT_MAX;
-      setReceiverCurrent(newRxCurrent.toFixed(2));
+      setReceiverCurrent((prev) => {
+        let newRxCurrent = parseFloat(prev) + (Math.random() * 0.04);
+        if (newRxCurrent >= RX_CURRENT_MAX) newRxCurrent = RX_CURRENT_MAX;
+        return newRxCurrent.toFixed(2);
+      });
 
-      // 📡 Transmitter: fluctuate randomly within range
-      let newTxVoltage = parseFloat(transmitterVoltage) + (Math.random() * 0.05 - 0.025);
-      newTxVoltage = Math.max(TX_VOLTAGE_MIN, Math.min(newTxVoltage, TX_VOLTAGE_MAX));
-      setTransmitterVoltage(newTxVoltage.toFixed(2));
+      
+      setTransmitterVoltage((prev) => {
+        let newTxVoltage = parseFloat(prev) + (Math.random() * 0.05 - 0.025);
+        newTxVoltage = Math.max(TX_VOLTAGE_MIN, Math.min(newTxVoltage, TX_VOLTAGE_MAX));
+        return newTxVoltage.toFixed(2);
+      });
 
-      let newTxCurrent = parseFloat(transmitterCurrent) + (Math.random() * 0.03 - 0.015);
-      newTxCurrent = Math.max(TX_CURRENT_MIN, Math.min(newTxCurrent, TX_CURRENT_MAX));
-      setTransmitterCurrent(newTxCurrent.toFixed(2));
+      setTransmitterCurrent((prev) => {
+        let newTxCurrent = parseFloat(prev) + (Math.random() * 0.03 - 0.015);
+        newTxCurrent = Math.max(TX_CURRENT_MIN, Math.min(newTxCurrent, TX_CURRENT_MAX));
+        return newTxCurrent.toFixed(2);
+      });
 
-      // 📊 Graph update
-      const newTime = new Date().toLocaleTimeString().slice(0, 8);
-      setGraphData((prev) => [...prev.slice(-19), { time: newTime, voltage: newRxVoltage }]);
+     
+      setReceiverVoltage((rxVoltage) => {
+        const newTime = new Date().toLocaleTimeString().slice(0, 8);
+        setGraphData((prev) => [...prev.slice(-19), { time: newTime, voltage: parseFloat(rxVoltage) }]);
+        return rxVoltage; // Return unchanged value
+      });
 
-      // 🔋 Efficiency fluctuation
+     
       setEfficiency((prev) => Math.min(95, Math.max(75, prev + (Math.random() - 0.5) * 3)));
     }, 2000);
 
     return () => clearInterval(intervalRef.current);
-  }, [receiverVoltage, receiverCurrent, transmitterVoltage, transmitterCurrent]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-emerald-900 relative overflow-hidden">
-      {/* ✨ Background Particles */}
+     
       <div className="absolute inset-0">
         {[...Array(30)].map((_, i) => (
           <motion.div
@@ -83,9 +92,9 @@ export default function Dashboard() {
         </p>
 
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 📡 Transmitter */}
+       
           <motion.section className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/20 shadow-2xl">
-            <h2 className="text-xl font-bold text-white text-center mb-4">📡 Transmitter</h2>
+            <h2 className="text-xl font-bold text-white text-center mb-4">📡 `Battery I</h2>
 
             <div className="grid grid-cols-1 gap-4">
               <div className="bg-white/10 p-4 rounded-xl text-center border border-indigo-400/30">
@@ -100,9 +109,9 @@ export default function Dashboard() {
             </div>
           </motion.section>
 
-          {/* 📶 Receiver */}
+          
           <motion.section className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-emerald-500/20 shadow-2xl">
-            <h2 className="text-xl font-bold text-white text-center mb-4">📶 Receiver</h2>
+            <h2 className="text-xl font-bold text-white text-center mb-4">📶 Battery II</h2>
 
             <div className="grid grid-cols-1 gap-4 mb-4">
               <div className="bg-white/10 p-4 rounded-xl text-center border border-emerald-400/30">
@@ -142,7 +151,7 @@ export default function Dashboard() {
           </motion.section>
         </div>
 
-        {/* 🔋 Efficiency */}
+        
         <motion.footer className="w-full max-w-4xl mt-6 bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-slate-500/20 text-center">
           <h3 className="text-lg font-bold text-slate-200 mb-2">🔋 System Efficiency</h3>
           <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-emerald-300 mb-1">
