@@ -94,7 +94,7 @@ export default function Dashboard() {
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6">
        
           <motion.section className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/20 shadow-2xl">
-            <h2 className="text-xl font-bold text-white text-center mb-4">📡 `Battery I</h2>
+            <h2 className="text-xl font-bold text-white text-center mb-4">📡 Battery I</h2>
 
             <div className="grid grid-cols-1 gap-4">
               <div className="bg-white/10 p-4 rounded-xl text-center border border-indigo-400/30">
