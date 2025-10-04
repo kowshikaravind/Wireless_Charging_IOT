@@ -9,9 +9,9 @@ export default function Dashboard() {
   const TX_CURRENT_MAX = 1.9;
 
   const RX_VOLTAGE_START = 11.8;
-  const RX_VOLTAGE_MAX = 12.8;
+  const RX_VOLTAGE_MAX = 12.0;
   const RX_CURRENT_START = 1.2;
-  const RX_CURRENT_MAX = 1.8;
+  const RX_CURRENT_MAX = 1.31;
 
   // 📊 States
   const [transmitterVoltage, setTransmitterVoltage] = useState(12.6);
@@ -22,25 +22,35 @@ export default function Dashboard() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // 📡 Transmitter: slight fluctuation within limits
-      const newTransmitterVoltage = (
-        TX_VOLTAGE_MIN + Math.random() * (TX_VOLTAGE_MAX - TX_VOLTAGE_MIN)
-      ).toFixed(2);
-      const newTransmitterCurrent = (
-        TX_CURRENT_MIN + Math.random() * (TX_CURRENT_MAX - TX_CURRENT_MIN)
-      ).toFixed(2);
-
-      setTransmitterVoltage(newTransmitterVoltage);
-      setTransmitterCurrent(newTransmitterCurrent);
-
-      // 📶 Receiver: gradual increase until max
+      // 📶 Receiver: increase until max, then stop
       setReceiverVoltage((prev) => {
-        const next = Math.min(parseFloat(prev) + 0.05, RX_VOLTAGE_MAX); // increase by 0.05 V each cycle
-        return next.toFixed(2);
+        const next = parseFloat(prev) + 0.05;
+        return next >= RX_VOLTAGE_MAX ? RX_VOLTAGE_MAX.toFixed(2) : next.toFixed(2);
       });
 
       setReceiverCurrent((prev) => {
-        const next = Math.min(parseFloat(prev) + 0.03, RX_CURRENT_MAX); // increase by 0.03 A each cycle
+        const next = parseFloat(prev) + 0.03;
+        return next >= RX_CURRENT_MAX ? RX_CURRENT_MAX.toFixed(2) : next.toFixed(2);
+      });
+
+      // 📡 Transmitter: random increase or decrease each cycle (within limits)
+      setTransmitterVoltage((prev) => {
+        let change = (Math.random() * 0.05 - 0.025).toFixed(2); // random -0.025V to +0.025V
+        let next = parseFloat(prev) + parseFloat(change);
+
+        if (next > TX_VOLTAGE_MAX) next = TX_VOLTAGE_MAX;
+        if (next < TX_VOLTAGE_MIN) next = TX_VOLTAGE_MIN;
+
+        return next.toFixed(2);
+      });
+
+      setTransmitterCurrent((prev) => {
+        let change = (Math.random() * 0.03 - 0.015).toFixed(2); // random -0.015A to +0.015A
+        let next = parseFloat(prev) + parseFloat(change);
+
+        if (next > TX_CURRENT_MAX) next = TX_CURRENT_MAX;
+        if (next < TX_CURRENT_MIN) next = TX_CURRENT_MIN;
+
         return next.toFixed(2);
       });
 
@@ -97,9 +107,18 @@ export default function Dashboard() {
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={graphData}>
             <XAxis dataKey="time" />
-            <YAxis domain={[11, 13]} label={{ value: "Voltage (V)", angle: -90, position: "insideLeft" }} />
+            <YAxis
+              domain={[11, 13]}
+              label={{ value: "Voltage (V)", angle: -90, position: "insideLeft" }}
+            />
             <Tooltip />
-            <Line type="monotone" dataKey="voltage" stroke="#34d399" strokeWidth={3} dot={true} />
+            <Line
+              type="monotone"
+              dataKey="voltage"
+              stroke="#34d399"
+              strokeWidth={3}
+              dot={true}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
