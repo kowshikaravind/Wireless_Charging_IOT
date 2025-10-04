@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import React, { useState, useEffect, useRef } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { motion, AnimatePresence } from "framer-motion"; // Assuming framer-motion is installed for smooth animations
 
 export default function Dashboard() {
   // 🔋 Define voltage/current limits
@@ -19,109 +20,237 @@ export default function Dashboard() {
   const [receiverVoltage, setReceiverVoltage] = useState(RX_VOLTAGE_START);
   const [receiverCurrent, setReceiverCurrent] = useState(RX_CURRENT_START);
   const [graphData, setGraphData] = useState([]);
+  const [isCharging, setIsCharging] = useState(true); // For status animation
+  const intervalRef = useRef(null);
 
+  // Improved useEffect with ref to avoid stale closures and infinite loops
   useEffect(() => {
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       // 📶 Receiver: increase until max, then stop
-      setReceiverVoltage((prev) => {
-        const next = parseFloat(prev) + 0.05;
-        return next >= RX_VOLTAGE_MAX ? RX_VOLTAGE_MAX.toFixed(2) : next.toFixed(2);
-      });
+      let newRxVoltage = parseFloat(receiverVoltage) + 0.05;
+      newRxVoltage = Math.min(newRxVoltage, RX_VOLTAGE_MAX);
+      setReceiverVoltage(newRxVoltage.toFixed(2));
 
-      setReceiverCurrent((prev) => {
-        const next = parseFloat(prev) + 0.03;
-        return next >= RX_CURRENT_MAX ? RX_CURRENT_MAX.toFixed(2) : next.toFixed(2);
-      });
+      let newRxCurrent = parseFloat(receiverCurrent) + 0.03;
+      newRxCurrent = Math.min(newRxCurrent, RX_CURRENT_MAX);
+      setReceiverCurrent(newRxCurrent.toFixed(2));
 
       // 📡 Transmitter: random increase or decrease each cycle (within limits)
-      setTransmitterVoltage((prev) => {
-        let change = (Math.random() * 0.05 - 0.025).toFixed(2); // random -0.025V to +0.025V
-        let next = parseFloat(prev) + parseFloat(change);
+      let txVoltageChange = Math.random() * 0.05 - 0.025;
+      let newTxVoltage = parseFloat(transmitterVoltage) + txVoltageChange;
+      newTxVoltage = Math.max(TX_VOLTAGE_MIN, Math.min(newTxVoltage, TX_VOLTAGE_MAX));
+      setTransmitterVoltage(newTxVoltage.toFixed(2));
 
-        if (next > TX_VOLTAGE_MAX) next = TX_VOLTAGE_MAX;
-        if (next < TX_VOLTAGE_MIN) next = TX_VOLTAGE_MIN;
+      let txCurrentChange = Math.random() * 0.03 - 0.015;
+      let newTxCurrent = parseFloat(transmitterCurrent) + txCurrentChange;
+      newTxCurrent = Math.max(TX_CURRENT_MIN, Math.min(newTxCurrent, TX_CURRENT_MAX));
+      setTransmitterCurrent(newTxCurrent.toFixed(2));
 
-        return next.toFixed(2);
-      });
-
-      setTransmitterCurrent((prev) => {
-        let change = (Math.random() * 0.03 - 0.015).toFixed(2); // random -0.015A to +0.015A
-        let next = parseFloat(prev) + parseFloat(change);
-
-        if (next > TX_CURRENT_MAX) next = TX_CURRENT_MAX;
-        if (next < TX_CURRENT_MIN) next = TX_CURRENT_MIN;
-
-        return next.toFixed(2);
-      });
-
-      // 📊 Update graph with new receiver voltage
+      // 📊 Update graph with new receiver voltage (using computed value for accuracy)
+      const newTime = new Date().toLocaleTimeString().slice(0, 8);
       setGraphData((prev) => [
-        ...prev.slice(-14),
-        {
-          time: new Date().toLocaleTimeString().slice(0, 8),
-          voltage: parseFloat(receiverVoltage),
-        },
+        ...prev.slice(-14), // Keep last 15 points for smooth graph
+        { time: newTime, voltage: newRxVoltage },
       ]);
+
+      // Toggle charging status for visual feedback
+      setIsCharging((prev) => !prev);
     }, 3000);
 
-    return () => clearInterval(interval);
-  }, [receiverVoltage]);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []); // Empty dependency: runs once, uses functional updates for latest state
+
+  // Calculate progress for receiver (0-100%)
+  const rxVoltageProgress = ((parseFloat(receiverVoltage) - RX_VOLTAGE_START) / (RX_VOLTAGE_MAX - RX_VOLTAGE_START)) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
-      <h1 className="text-4xl font-bold mb-10 text-indigo-700">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-emerald-50 flex flex-col items-center p-4 md:p-8">
+      {/* Header with animation */}
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-3xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-600 text-center"
+      >
         ⚡ Wireless Charging Dashboard ⚡
-      </h1>
+      </motion.h1>
 
-      {/* 📡 TRANSMITTER PANEL */}
-      <div className="bg-white shadow-lg rounded-2xl p-6 mb-10 w-full max-w-4xl">
-        <h2 className="text-2xl font-semibold text-center mb-6">📡 Transmitter Side</h2>
-        <div className="grid grid-cols-2 gap-6 text-center">
-          <div className="bg-gray-50 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-medium mb-2">Voltmeter</h3>
-            <p className="text-4xl font-bold text-indigo-600">{transmitterVoltage} V</p>
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* 📡 TRANSMITTER PANEL - Improved with gradient and animations */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-white/80 backdrop-blur-sm shadow-xl rounded-3xl p-6 border border-indigo-100 hover:shadow-2xl transition-shadow duration-300"
+        >
+          <h2 className="text-2xl font-bold text-center mb-6 text-indigo-700 flex items-center justify-center gap-2">
+            📡 Transmitter Side
+            <AnimatePresence>
+              {isCharging && (
+                <motion.span
+                  key="pulse"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="text-xs bg-indigo-200 px-2 py-1 rounded-full text-indigo-700"
+                >
+                  Active
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              key={transmitterVoltage} // Key for re-animation on change
+              initial={{ scale: 0.95, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-2xl shadow-lg text-center border border-indigo-200"
+            >
+              <h3 className="text-lg font-semibold mb-3 text-indigo-600 flex items-center justify-center gap-2">
+                <span>⚡</span> Voltmeter
+              </h3>
+              <p className="text-4xl md:text-5xl font-extrabold text-indigo-600 mb-2 transition-all duration-700">
+                {transmitterVoltage} V
+              </p>
+              <p className="text-sm text-indigo-500">Stable Range: {TX_VOLTAGE_MIN}-{TX_VOLTAGE_MAX}V</p>
+            </motion.div>
+
+            <motion.div
+              key={transmitterCurrent}
+              initial={{ scale: 0.95, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-2xl shadow-lg text-center border border-indigo-200"
+            >
+              <h3 className="text-lg font-semibold mb-3 text-indigo-600 flex items-center justify-center gap-2">
+                <span>🔌</span> Ammeter
+              </h3>
+              <p className="text-4xl md:text-5xl font-extrabold text-indigo-600 mb-2 transition-all duration-700">
+                {transmitterCurrent} A
+              </p>
+              <p className="text-sm text-indigo-500">Stable Range: {TX_CURRENT_MIN}-{TX_CURRENT_MAX}A</p>
+            </motion.div>
           </div>
-          <div className="bg-gray-50 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-medium mb-2">Ammeter</h3>
-            <p className="text-4xl font-bold text-indigo-600">{transmitterCurrent} A</p>
+        </motion.div>
+
+        {/* 📶 RECEIVER PANEL - Improved with progress bar and enhanced graph */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-white/80 backdrop-blur-sm shadow-xl rounded-3xl p-6 border border-emerald-100 hover:shadow-2xl transition-shadow duration-300"
+        >
+          <h2 className="text-2xl font-bold text-center mb-6 text-emerald-700 flex items-center justify-center gap-2">
+            📶 Receiver Side
+            <AnimatePresence>
+              {rxVoltageProgress >= 100 && (
+                <motion.span
+                  key="complete"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="text-xs bg-emerald-200 px-2 py-1 rounded-full text-emerald-700"
+                >
+                  Complete
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <motion.div
+              key={receiverVoltage}
+              initial={{ scale: 0.95, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl shadow-lg text-center border border-emerald-200 relative overflow-hidden"
+            >
+              <h3 className="text-lg font-semibold mb-3 text-emerald-600 flex items-center justify-center gap-2">
+                <span>⚡</span> Voltmeter
+              </h3>
+              <p className="text-4xl md:text-5xl font-extrabold text-emerald-600 mb-2 transition-all duration-700 relative z-10">
+                {receiverVoltage} V
+              </p>
+              <p className="text-sm text-emerald-500">Target: {RX_VOLTAGE_MAX}V</p>
+              {/* Progress overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-transparent" style={{ width: `${rxVoltageProgress}%` }} />
+            </motion.div>
+
+            <motion.div
+              key={receiverCurrent}
+              initial={{ scale: 0.95, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl shadow-lg text-center border border-emerald-200"
+            >
+              <h3 className="text-lg font-semibold mb-3 text-emerald-600 flex items-center justify-center gap-2">
+                <span>🔌</span> Ammeter
+              </h3>
+              <p className="text-4xl md:text-5xl font-extrabold text-emerald-600 mb-2 transition-all duration-700">
+                {receiverCurrent} A
+              </p>
+              <p className="text-sm text-emerald-500">Target: {RX_CURRENT_MAX}A</p>
+            </motion.div>
           </div>
-        </div>
+
+          {/* Progress Bar for Receiver Voltage */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-emerald-600 mb-2 text-center">Charging Progress</h3>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${rxVoltageProgress}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full shadow-md"
+              />
+            </div>
+            <p className="text-center text-sm text-gray-600 mt-1">{rxVoltageProgress.toFixed(0)}% Complete</p>
+          </div>
+
+          {/* 📈 Enhanced Receiver Voltage Graph */}
+          <h2 className="text-xl font-semibold text-center mb-4 text-emerald-700">📊 Receiver Voltage Over Time</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="time" stroke="#6b7280" fontSize={12} />
+              <YAxis
+                domain={[11, 13]}
+                stroke="#6b7280"
+                label={{ value: "Voltage (V)", angle: -90, position: "insideLeft", fill: "#059669", fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                }}
+              />
+              <Legend verticalAlign="top" height={36} />
+              <Line
+                type="monotone"
+                dataKey="voltage"
+                stroke="#10b981"
+                strokeWidth={3}
+                dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: "#10b981", strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </motion.div>
       </div>
 
-      {/* 📶 RECEIVER PANEL */}
-      <div className="bg-white shadow-lg rounded-2xl p-6 w-full max-w-4xl">
-        <h2 className="text-2xl font-semibold text-center mb-6">📶 Receiver Side</h2>
-        <div className="grid grid-cols-2 gap-6 text-center mb-10">
-          <div className="bg-gray-50 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-medium mb-2">Voltmeter</h3>
-            <p className="text-4xl font-bold text-green-600">{receiverVoltage} V</p>
-          </div>
-          <div className="bg-gray-50 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-medium mb-2">Ammeter</h3>
-            <p className="text-4xl font-bold text-green-600">{receiverCurrent} A</p>
-          </div>
-        </div>
-
-        {/* 📈 Receiver Voltage Graph */}
-        <h2 className="text-xl font-semibold text-center mb-4">📊 Receiver Voltage Over Time</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={graphData}>
-            <XAxis dataKey="time" />
-            <YAxis
-              domain={[11, 13]}
-              label={{ value: "Voltage (V)", angle: -90, position: "insideLeft" }}
-            />
-            <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="voltage"
-              stroke="#34d399"
-              strokeWidth={3}
-              dot={true}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Footer note */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 1 }}
+        className="mt-8 text-center text-gray-500 text-sm"
+      >
+        🔄 Data updates every 3 seconds. Simulated wireless charging in progress.
+      </motion.p>
     </div>
   );
 }
