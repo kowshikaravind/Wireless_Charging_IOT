@@ -18,7 +18,8 @@ export default function Dashboard() {
   const [transmitterCurrent, setTransmitterCurrent] = useState(1.8);
   const [receiverVoltage, setReceiverVoltage] = useState(RX_VOLTAGE_START);
   const [receiverCurrent, setReceiverCurrent] = useState(RX_CURRENT_START);
-  const [graphData, setGraphData] = useState([]);
+  const [transmitterGraphData, setTransmitterGraphData] = useState([]); // New state for transmitter graph
+  const [receiverGraphData, setReceiverGraphData] = useState([]); // Renamed for clarity
   const [efficiency, setEfficiency] = useState(85);
 
   const intervalRef = useRef(null);
@@ -26,9 +27,12 @@ export default function Dashboard() {
   
   useEffect(() => {
     intervalRef.current = setInterval(() => {
+      // Update receiver values and graph
       setReceiverVoltage((prev) => {
         let newRxVoltage = parseFloat(prev) + (Math.random() * 0.08);
         if (newRxVoltage >= RX_VOLTAGE_MAX) newRxVoltage = RX_VOLTAGE_MAX;
+        const newTime = new Date().toLocaleTimeString().slice(0, 8);
+        setReceiverGraphData((graphPrev) => [...graphPrev.slice(-19), { time: newTime, voltage: newRxVoltage }]);
         return newRxVoltage.toFixed(2);
       });
 
@@ -38,10 +42,12 @@ export default function Dashboard() {
         return newRxCurrent.toFixed(2);
       });
 
-      
+      // Update transmitter values and graph
       setTransmitterVoltage((prev) => {
         let newTxVoltage = parseFloat(prev) + (Math.random() * 0.05 - 0.025);
         newTxVoltage = Math.max(TX_VOLTAGE_MIN, Math.min(newTxVoltage, TX_VOLTAGE_MAX));
+        const newTime = new Date().toLocaleTimeString().slice(0, 8);
+        setTransmitterGraphData((graphPrev) => [...graphPrev.slice(-19), { time: newTime, voltage: newTxVoltage }]);
         return newTxVoltage.toFixed(2);
       });
 
@@ -49,13 +55,6 @@ export default function Dashboard() {
         let newTxCurrent = parseFloat(prev) + (Math.random() * 0.03 - 0.015);
         newTxCurrent = Math.max(TX_CURRENT_MIN, Math.min(newTxCurrent, TX_CURRENT_MAX));
         return newTxCurrent.toFixed(2);
-      });
-
-     
-      setReceiverVoltage((rxVoltage) => {
-        const newTime = new Date().toLocaleTimeString().slice(0, 8);
-        setGraphData((prev) => [...prev.slice(-19), { time: newTime, voltage: parseFloat(rxVoltage) }]);
-        return rxVoltage; // Return unchanged value
       });
 
      
@@ -96,7 +95,7 @@ export default function Dashboard() {
           <motion.section className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/20 shadow-2xl">
             <h2 className="text-xl font-bold text-white text-center mb-4">📡 Battery I</h2>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-4 mb-4">
               <div className="bg-white/10 p-4 rounded-xl text-center border border-indigo-400/30">
                 <h3 className="text-indigo-200 text-base font-semibold mb-2">⚡ Voltage</h3>
                 <p className="text-3xl font-black text-white">{transmitterVoltage}V</p>
@@ -107,6 +106,31 @@ export default function Dashboard() {
                 <p className="text-3xl font-black text-white">{transmitterCurrent}A</p>
               </div>
             </div>
+
+            {/* Transmitter Graph */}
+            <h3 className="text-indigo-200 text-center mb-2">📈 Voltage Trend</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={transmitterGraphData}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="time" stroke="rgba(255,255,255,0.4)" fontSize={9} />
+                <YAxis domain={[12, 13]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(15,23,42,0.95)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "6px",
+                    color: "white",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="voltage"
+                  stroke="#a5b4fc" // Indigo color for transmitter
+                  strokeWidth={2}
+                  dot={{ fill: "#a5b4fc", r: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </motion.section>
 
           
@@ -127,7 +151,7 @@ export default function Dashboard() {
 
             <h3 className="text-emerald-200 text-center mb-2">📈 Voltage Trend</h3>
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={graphData}>
+              <LineChart data={receiverGraphData}>
                 <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="time" stroke="rgba(255,255,255,0.4)" fontSize={9} />
                 <YAxis domain={[11, 13]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
