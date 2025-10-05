@@ -33,7 +33,6 @@ export default function Dashboard() {
   });
   const [gpsStatus, setGpsStatus] = useState("Initializing GPS...");
   const [locationError, setLocationError] = useState(null);
-
   const intervalRef = useRef(null);
   const watchIdRef = useRef(null);
 
