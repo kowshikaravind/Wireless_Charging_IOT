@@ -27,65 +27,65 @@ export default function Dashboard() {
     name: "Acquiring location...",
     accuracy: null
   });
-  const [gpsStatus, setGpsStatus] = useState("Waiting for GPS...");
+  const [gpsStatus, setGpsStatus] = useState("Initializing GPS...");
+  const [locationError, setLocationError] = useState(null);
 
   const intervalRef = useRef(null);
   const watchIdRef = useRef(null);
 
   // Real GPS Location Tracking
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setGpsStatus("Geolocation is not supported by this browser.");
-      return;
-    }
+    const initializeGPS = async () => {
+      if (!navigator.geolocation) {
+        setGpsStatus("Geolocation not supported");
+        setLocationError("Your browser doesn't support GPS location tracking.");
+        return;
+      }
 
-    setGpsStatus("Requesting location access...");
+      setGpsStatus("Requesting location permission...");
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        setLocation({
-          latitude,
-          longitude,
-          name: "Current Location",
-          accuracy
+      try {
+        // First get current position
+        await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+          });
         });
-        setGpsStatus("GPS Active - Tracking");
-        
-        reverseGeocode(latitude, longitude);
-      },
-      (error) => {
+
+        // Then start watching position
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            setLocation(prev => ({
+              ...prev,
+              latitude,
+              longitude,
+              accuracy
+            }));
+            setGpsStatus("GPS Active - Live Tracking");
+            setLocationError(null);
+            
+            // Update location name
+            reverseGeocode(latitude, longitude);
+          },
+          (error) => {
+            handleLocationError(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
+          }
+        );
+
+      } catch (error) {
         handleLocationError(error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
       }
-    );
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        setLocation(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-          accuracy
-        }));
-        setGpsStatus("GPS Active - Tracking");
-        if (Math.random() < 0.3) { 
-          reverseGeocode(latitude, longitude);
-        }
-      },
-      (error) => {
-        handleLocationError(error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 1000
-      }
-    );
+    };
+
+    initializeGPS();
 
     return () => {
       if (watchIdRef.current) {
@@ -96,36 +96,36 @@ export default function Dashboard() {
 
   const reverseGeocode = async (lat, lng) => {
     try {
+      // Add a small delay to avoid too many API calls
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`
       );
       
       if (response.ok) {
         const data = await response.json();
-        if (data.display_name) {
+        let locationName = "Current Location";
+        
+        if (data.address) {
           const address = data.address;
-          let locationName = "";
-          
-          if (address.city || address.town || address.village) {
-            locationName = address.city || address.town || address.village;
-          } else if (address.municipality || address.county) {
-            locationName = address.municipality || address.county;
-          } else {
+          if (address.road || address.suburb) {
+            locationName = `${address.road || address.suburb}`;
+            if (address.city || address.town || address.village) {
+              locationName += `, ${address.city || address.town || address.village}`;
+            }
+          } else if (data.display_name) {
             locationName = data.display_name.split(',')[0];
           }
-          
-          if (address.state || address.region) {
-            locationName += `, ${address.state || address.region}`;
-          }
-          
-          setLocation(prev => ({
-            ...prev,
-            name: locationName || "Unknown Location"
-          }));
         }
+        
+        setLocation(prev => ({
+          ...prev,
+          name: locationName
+        }));
       }
     } catch (error) {
-      console.log("Geocoding failed, using coordinates:", error);
+      console.log("Geocoding failed, using coordinates");
       setLocation(prev => ({
         ...prev,
         name: `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
@@ -134,26 +134,84 @@ export default function Dashboard() {
   };
 
   const handleLocationError = (error) => {
+    let errorMessage = "Location error";
+    
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        setGpsStatus("Location access denied by user");
-        setLocation(prev => ({ ...prev, name: "Location access denied" }));
+        errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+        setGpsStatus("Permission Denied");
         break;
       case error.POSITION_UNAVAILABLE:
-        setGpsStatus("Location information unavailable");
-        setLocation(prev => ({ ...prev, name: "Location unavailable" }));
+        errorMessage = "Location information unavailable. Please check your GPS signal.";
+        setGpsStatus("Location Unavailable");
         break;
       case error.TIMEOUT:
-        setGpsStatus("Location request timed out");
-        setLocation(prev => ({ ...prev, name: "Location timeout" }));
+        errorMessage = "Location request timed out. Please try again.";
+        setGpsStatus("Request Timeout");
         break;
       default:
-        setGpsStatus("An unknown location error occurred");
-        setLocation(prev => ({ ...prev, name: "Location error" }));
+        errorMessage = "Unable to get location. Please try again.";
+        setGpsStatus("Location Error");
         break;
     }
+    
+    setLocationError(errorMessage);
+    setLocation(prev => ({ 
+      ...prev, 
+      name: "Location unavailable" 
+    }));
   };
 
+  const requestLocationPermission = () => {
+    setGpsStatus("Requesting permission...");
+    setLocationError(null);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setLocation({
+          latitude,
+          longitude,
+          name: "Current Location",
+          accuracy
+        });
+        setGpsStatus("GPS Active - Live Tracking");
+        setLocationError(null);
+        
+        // Restart watching position
+        if (watchIdRef.current) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            setLocation(prev => ({
+              ...prev,
+              latitude,
+              longitude,
+              accuracy
+            }));
+            reverseGeocode(latitude, longitude);
+          },
+          handleLocationError,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
+          }
+        );
+      },
+      handleLocationError,
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  // Simulated data updates (unchanged)
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setReceiverVoltage((prev) => {
@@ -228,7 +286,7 @@ export default function Dashboard() {
             <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
               gpsStatus.includes("Active") 
                 ? "bg-green-500/20 text-green-300 border border-green-500/30" 
-                : gpsStatus.includes("Waiting") || gpsStatus.includes("Requesting")
+                : gpsStatus.includes("Requesting") || gpsStatus.includes("Initializing")
                 ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
                 : "bg-red-500/20 text-red-300 border border-red-500/30"
             }`}>
@@ -257,17 +315,28 @@ export default function Dashboard() {
             </div>
           </div>
           
+          {locationError && (
+            <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20 mb-2">
+              <p className="text-xs text-red-300 mb-2">{locationError}</p>
+              <button
+                onClick={requestLocationPermission}
+                className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg border border-blue-500/30 transition-colors"
+              >
+                Retry Location Access
+              </button>
+            </div>
+          )}
           
           <p className="text-xs text-slate-400">
-            {gpsStatus.includes("denied") 
-              ? "Please enable location permissions"
-              : "Real-time GPS tracking"
+            {gpsStatus.includes("Active") 
+              ? "Real-time GPS tracking active"
+              : "Location services required for accurate tracking"
             }
           </p>
         </motion.section>
 
+        {/* Rest of the dashboard components */}
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6">
-    
           <motion.section className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/20 shadow-2xl">
             <h2 className="text-xl font-bold text-white text-center mb-4">📡 Battery I</h2>
             <div className="grid grid-cols-1 gap-4 mb-4">
