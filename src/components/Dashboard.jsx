@@ -263,14 +263,15 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="relative z-10 flex flex-col items-center px-4 py-6 md:px-6 md:py-8">
+      <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-6 md:px-6 md:pt-4 md:pb-8">
+
         <motion.h1
-          className="text-2xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-emerald-300 drop-shadow-2xl text-center mb-2"
-        >
+  className="text-2xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-emerald-300 drop-shadow-2xl text-center mb-4 leading-tight md:leading-snug lg:leading-normal pt-2"
+>
           ⚡ Wireless Charging Dashboard
         </motion.h1>
 
-        <p className="text-xs md:text-sm text-slate-300 mb-6 text-center">
+        <p className="text-xs md:text-sm text-slate-300 mb-8 text-center">
           Real-time monitoring & bidirectional energy flow
         </p>
 
