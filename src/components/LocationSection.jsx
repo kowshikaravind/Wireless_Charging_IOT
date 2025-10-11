@@ -20,6 +20,7 @@ export default function LocationSection({ location, gpsStatus, locationError, re
         }`}>
           {gpsStatus}
         </div>
+        
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">

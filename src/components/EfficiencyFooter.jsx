@@ -19,6 +19,7 @@ export default function EfficiencyFooter({ efficiency, transmitterVoltage, trans
       <p className="text-xs text-slate-400">
         Power Transfer: {(transmitterVoltage * transmitterCurrent).toFixed(1)}W → {(receiverVoltage * receiverCurrent).toFixed(1)}W
       </p>
+      
     </motion.footer>
   );
 }

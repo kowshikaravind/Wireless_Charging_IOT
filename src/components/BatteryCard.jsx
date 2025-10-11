@@ -19,6 +19,7 @@ export default function BatteryCard({ title, accent, voltage, current, graphData
           <p className="text-3xl font-black text-white">{current}A</p>
         </div>
       </div>
+      
       <h3 className={`${headerClass} text-center mb-2`}>📈 Voltage Trend</h3>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={graphData}>

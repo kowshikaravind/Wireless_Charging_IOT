@@ -16,6 +16,7 @@ export default function Header() {
       <p className="text-xs md:text-sm text-slate-300 mb-8 text-center">
         Real-time monitoring & bidirectional energy flow
       </p>
+      
     </>
   );
 }

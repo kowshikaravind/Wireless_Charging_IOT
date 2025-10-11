@@ -290,6 +290,8 @@ export default function Dashboard() {
           />
 
           <BatteryCard
+
+          
             title={"📶 Battery II"}
             accent="emerald"
             voltage={receiverVoltage}

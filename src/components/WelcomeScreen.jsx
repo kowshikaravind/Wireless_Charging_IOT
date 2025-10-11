@@ -25,7 +25,6 @@ export default function WelcomeScreen({ onFinish }) {
       left: `${Math.random() * 100}%`,
     }));
   }, []);
-
   const lightRays = useMemo(() => {
     return [...Array(35)].map((_, i) => ({
       id: i,
