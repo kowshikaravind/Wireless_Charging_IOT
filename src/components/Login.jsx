@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function Login({ onLogin, onBack }) {
+export default function Login({ onLogin, onBack, onRegisterLink }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -36,7 +36,10 @@ export default function Login({ onLogin, onBack }) {
             className="w-full p-3 rounded-lg bg-white/6 text-white placeholder-slate-300 border border-slate-700"
           />
           <div className="flex justify-between items-center">
-            <button type="button" onClick={onBack} className="text-sm text-slate-300 underline">Back</button>
+            <div className="flex gap-3 items-center">
+              <button type="button" onClick={onBack} className="text-sm text-slate-300 underline">Back</button>
+              <button type="button" onClick={onRegisterLink} className="text-sm text-indigo-300 underline">Register</button>
+            </div>
             <button type="submit" className="px-4 py-2 bg-indigo-500 text-white rounded-lg font-semibold">Sign In</button>
           </div>
         </form>

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
+import gpayImg from "../images/gpay.jpeg";
 
 const PLANS = [
-  { id: "basic", name: "Basic Recharge", amount: 49, minutes: 30 },
-  { id: "pro", name: "Pro Recharge", amount: 99, minutes: 75 },
-  { id: "ultra", name: "Ultra Recharge", amount: 199, minutes: 200 },
+  { id: "basic", name: "Basic Recharge", amount: 9, minutes: 30 },
+  { id: "pro", name: "Pro Recharge", amount: 19, minutes: 75 },
+  { id: "ultra", name: "Ultra Recharge", amount: 24, minutes: 200 },
 ];
 
 export default function RechargePlans({ user, onRecharge, onBack }) {
@@ -56,6 +57,14 @@ export default function RechargePlans({ user, onRecharge, onBack }) {
           <button onClick={handleRecharge} disabled={processing} className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold">
             {processing ? "Processing..." : "Recharge Now"}
           </button>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-slate-300 mb-3">You can pay securely using UPI (Google Pay):</p>
+          <div className="flex items-center justify-center">
+            <img src={gpayImg} alt="Google Pay" className="w-40 h-auto rounded-md shadow-md" />
+          </div>
+          <p className="text-xs text-slate-400 mt-3">Scan or tap the UPI QR in your Google Pay app to complete payment.</p>
         </div>
       </div>
     </div>
